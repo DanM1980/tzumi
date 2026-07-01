@@ -20,7 +20,7 @@ export class GeminiProvider implements AIProvider {
     };
 
     if (systemPrompt) {
-      body.systemInstruction = { parts: [{ text: systemPrompt }] };
+      body.system_instruction = { parts: [{ text: systemPrompt }] };
     }
 
     const res = await fetch(url, {
@@ -61,7 +61,7 @@ export class GeminiProvider implements AIProvider {
     };
 
     if (systemMsg) {
-      body.systemInstruction = { parts: [{ text: systemMsg.content }] };
+      body.system_instruction = { parts: [{ text: systemMsg.content }] };
     }
 
     const res = await fetch(url, {

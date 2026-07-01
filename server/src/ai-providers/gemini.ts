@@ -2,7 +2,7 @@ import { AIProvider, AIProviderConfig } from './types.js';
 
 export class GeminiProvider implements AIProvider {
   private config: AIProviderConfig;
-  private baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+  private baseUrl = 'https://generativelanguage.googleapis.com/v1';
 
   constructor(config: AIProviderConfig) {
     this.config = config;

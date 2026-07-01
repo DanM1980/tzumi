@@ -35,19 +35,19 @@ if (!geminiKey) {
 
 const conductorProvider = new GeminiProvider({
   apiKey: geminiKey,
-  model: process.env.CONDUCTOR_MODEL || 'gemini-2.0-flash',
+  model: process.env.CONDUCTOR_MODEL || 'gemini-2.5-flash',
   temperature: 0.7,
 });
 
 const storyProvider = new GeminiProvider({
   apiKey: geminiKey,
-  model: process.env.STORY_MODEL || 'gemini-2.0-flash',
+  model: process.env.STORY_MODEL || 'gemini-2.5-flash',
   temperature: 0.9,
 });
 
 const friendProvider = new GeminiProvider({
   apiKey: geminiKey,
-  model: process.env.FRIEND_MODEL || 'gemini-2.0-flash',
+  model: process.env.FRIEND_MODEL || 'gemini-2.5-flash',
   temperature: 0.8,
 });
 

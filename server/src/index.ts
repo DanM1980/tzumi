@@ -73,10 +73,6 @@ const clientDistPath = path.resolve(__dirname, '..', '..', 'client', 'dist');
 if (isProd) {
   console.log('[Boot] NODE_ENV=production — serving static client...');
   app.use(express.static(clientDistPath));
-  // Fallback to index.html for client-side routing (React Router)
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(clientDistPath, 'index.html'));
-  });
 } else {
   console.log('[Boot] Development mode — not serving static client');
 }
@@ -168,6 +164,13 @@ app.post('/api/session/start', (req, res) => {
 
   res.json({ sessionId, status: 'active' });
 });
+
+// ─── Production: SPA fallback (must be after API routes) ──
+if (isProd) {
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 // ─── WebSocket Message Handlers ────────────────────────────
 wsManager.on('session:start', async (client, _type, payload) => {

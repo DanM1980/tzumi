@@ -1,0 +1,181 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #e8e0ff 0%, #ffe0e8 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Status Bar */
+.statusBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 0.85rem;
+  color: #6b6b80;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.online {
+  background: #4caf50;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+}
+
+.offline {
+  background: #f44336;
+}
+
+/* Main Content */
+.main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Avatar Section */
+.avatarSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6c63ff, #ff6584);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 40px rgba(108, 99, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.avatarTalking {
+  box-shadow: 0 8px 40px rgba(108, 99, 255, 0.5), 0 0 60px rgba(255, 101, 132, 0.3);
+}
+
+.avatarEmoji {
+  font-size: 5rem;
+  display: inline-block;
+}
+
+.avatarTalking .avatarEmoji {
+  animation: talk 0.35s ease-in-out infinite alternate;
+}
+
+.friendName {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d2d3a;
+}
+
+@keyframes talk {
+  0% {
+    transform: scaleX(1) scaleY(1) translateY(0);
+  }
+  25% {
+    transform: scaleX(0.95) scaleY(1.12) translateY(-4px);
+  }
+  50% {
+    transform: scaleX(1.05) scaleY(0.92) translateY(2px);
+  }
+  75% {
+    transform: scaleX(0.97) scaleY(1.08) translateY(-2px);
+  }
+  100% {
+    transform: scaleX(1.02) scaleY(0.98) translateY(1px);
+  }
+}
+
+/* Speaking indicator — visible only when agent is talking */
+.speakingIndicator {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  height: 24px;
+}
+
+.wave {
+  width: 4px;
+  height: 100%;
+  background: #6c63ff;
+  border-radius: 2px;
+  animation: wave 0.6s ease-in-out infinite;
+}
+
+.wave:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.wave:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes wave {
+  0%, 100% { height: 8px; }
+  50% { height: 24px; }
+}
+
+/* Talk Button */
+.talkButton {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 20px 48px;
+  font-size: 1.2rem;
+  background: white;
+  color: #2d2d3a;
+  border-radius: 50px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+  font-weight: 600;
+}
+
+.talkButton:hover {
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.talkButtonActive {
+  background: #6c63ff;
+  color: white;
+  box-shadow: 0 4px 24px rgba(108, 99, 255, 0.4);
+  animation: talkBtnPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes talkBtnPulse {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.05); }
+}
+
+/* Error banner */
+.errorBanner {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ff4444;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  max-width: 85%;
+  text-align: center;
+  z-index: 20;
+  animation: kidErrorFade 0.3s ease;
+}
+
+@keyframes kidErrorFade {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

@@ -1,0 +1,27 @@
+# ─── Environment ────────────────────────────
+.env
+.env.local
+.env.production
+
+# ─── Dependencies ───────────────────────────
+node_modules/
+
+# ─── Build output ───────────────────────────
+dist/
+client/dist/
+
+# ─── Database ───────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+server/data/
+
+# ─── OS ─────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── IDE ────────────────────────────────────
+.vscode/settings.json
+*.swp
+*.swo
+*~

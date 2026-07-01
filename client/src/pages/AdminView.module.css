@@ -1,0 +1,254 @@
+.container {
+  min-height: 100vh;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffc857;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.online {
+  background: #4caf50;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+}
+
+.offline {
+  background: #f44336;
+}
+
+.sessionId {
+  color: #6b6b80;
+  font-size: 0.8rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 20px;
+  flex: 1;
+}
+
+.panel {
+  background: #16213e;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.panelTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #e0e0e0;
+}
+
+/* Transcript Panel */
+.transcriptPanel {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  max-height: 500px;
+  overflow: hidden;
+}
+
+.transcriptList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: 420px;
+}
+
+.emptyState {
+  color: #6b6b80;
+  font-style: italic;
+}
+
+.msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+}
+
+.msgRole {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.role_kid .msgRole { color: #6c63ff; }
+.role_friend .msgRole { color: #ff6584; }
+.role_system .msgRole { color: #ffc857; }
+
+.msgText {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Agent Logs Panel */
+.logsPanel {
+  grid-column: 2;
+  grid-row: 1;
+  max-height: 300px;
+  overflow: hidden;
+}
+
+.logsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: 240px;
+}
+
+.logEntry {
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border-right: 3px solid #6c63ff;
+}
+
+.logHeader {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.logAgent {
+  font-weight: 600;
+  color: #6c63ff;
+}
+
+.logTime {
+  color: #6b6b80;
+  margin-left: auto;
+}
+
+.logPriority {
+  font-size: 0.75rem;
+  color: #6b6b80;
+}
+
+.highPriority {
+  color: #ff6584;
+  font-weight: 600;
+}
+
+.logContent {
+  font-size: 0.85rem;
+  color: #b0b0c0;
+  line-height: 1.3;
+}
+
+/* Conductor Panel */
+.conductorPanel {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.conductorStatus {
+  color: #ffc857;
+  font-size: 0.9rem;
+}
+
+/* Intervention Panel */
+.interventionPanel {
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+
+.interventionInput {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.textarea {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: white;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: none;
+  min-height: 60px;
+}
+
+.textarea::placeholder {
+  color: #6b6b80;
+}
+
+.sendButton {
+  padding: 12px 24px;
+  background: #6c63ff;
+  color: white;
+  font-weight: 600;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.sendButton:hover {
+  background: #5a52d5;
+}
+
+.quickActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quickBtn {
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.08);
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  border-radius: 20px;
+}
+
+.quickBtn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .transcriptPanel { grid-column: 1; grid-row: auto; }
+  .logsPanel { grid-column: 1; grid-row: auto; }
+  .conductorPanel { grid-column: 1; grid-row: auto; }
+  .interventionPanel { grid-column: 1; grid-row: auto; }
+}

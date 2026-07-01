@@ -1,0 +1,72 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #6c63ff 0%, #ff6584 50%, #ffc857 100%);
+  padding: 20px;
+}
+
+.content {
+  text-align: center;
+  max-width: 500px;
+}
+
+.title {
+  font-size: 3rem;
+  color: white;
+  margin-bottom: 8px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 48px;
+}
+
+.cards {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.kidCard,
+.adminCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 32px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  width: 200px;
+  transition: all 0.3s ease;
+}
+
+.kidCard:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 12px 48px rgba(108, 99, 255, 0.3);
+}
+
+.adminCard:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 12px 48px rgba(255, 101, 132, 0.3);
+}
+
+.emoji {
+  font-size: 3rem;
+}
+
+.label {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2d2d3a;
+}
+
+.desc {
+  font-size: 0.9rem;
+  color: #6b6b80;
+}

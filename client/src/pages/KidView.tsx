@@ -22,7 +22,7 @@ export default function KidView() {
   // ── Server WebSocket connection (so transcripts reach the conductor) ──
   const { send: wsSend, connected: wsConnected } = useWebSocket({
     type: 'kid',
-    onMessage: useCallback((msg) => {
+    onMessage: useCallback((msg: WebSocketMessage) => {
       switch (msg.type) {
         case 'session:started': {
           console.log('[Kid] Session started on server:', msg.payload.sessionId);

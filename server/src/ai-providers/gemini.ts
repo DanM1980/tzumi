@@ -1,82 +1,52 @@
+import { GoogleGenAI } from '@google/genai';
 import { AIProvider, AIProviderConfig } from './types.js';
 
 export class GeminiProvider implements AIProvider {
   private config: AIProviderConfig;
-  private baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+  private client: GoogleGenAI;
 
   constructor(config: AIProviderConfig) {
     this.config = config;
+    this.client = new GoogleGenAI({ apiKey: config.apiKey });
   }
 
   async generateText(prompt: string, systemPrompt?: string): Promise<string> {
-    const url = `${this.baseUrl}/models/${this.config.model}:generateContent?key=${this.config.apiKey}`;
-    
-    const body: Record<string, unknown> = {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
+    const response = await this.client.models.generateContent({
+      model: this.config.model,
+      contents: prompt,
+      config: {
+        systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined,
         temperature: this.config.temperature ?? 0.7,
         maxOutputTokens: this.config.maxTokens ?? 1024,
       },
-    };
-
-    if (systemPrompt) {
-      body.systemInstruction = { parts: [{ text: systemPrompt }] };
-    }
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
     });
 
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Gemini API error (${res.status}): ${err}`);
-    }
-
-    const data = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    return response.text || '';
   }
 
   async generateWithContext(
     messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
   ): Promise<string> {
-    const url = `${this.baseUrl}/models/${this.config.model}:generateContent?key=${this.config.apiKey}`;
-    
+    const systemMsg = messages.find(m => m.role === 'system');
+
     const contents = messages
       .filter(m => m.role !== 'system')
       .map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
+        role: m.role === 'assistant' ? 'model' as const : 'user' as const,
         parts: [{ text: m.content }],
       }));
 
-    const systemMsg = messages.find(m => m.role === 'system');
-    
-    const body: Record<string, unknown> = {
+    const response = await this.client.models.generateContent({
+      model: this.config.model,
       contents,
-      generationConfig: {
+      config: {
+        systemInstruction: systemMsg ? { parts: [{ text: systemMsg.content }] } : undefined,
         temperature: this.config.temperature ?? 0.7,
         maxOutputTokens: this.config.maxTokens ?? 1024,
       },
-    };
-
-    if (systemMsg) {
-      body.system_instruction = { parts: [{ text: systemMsg.content }] };
-    }
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
     });
 
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Gemini API error (${res.status}): ${err}`);
-    }
-
-    const data = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    return response.text || '';
   }
 
   async healthCheck(): Promise<boolean> {

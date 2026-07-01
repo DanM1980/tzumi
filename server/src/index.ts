@@ -172,89 +172,99 @@ if (isProd) {
   });
 }
 
+// ─── Active session sharing ───────────────────────────────
+// Track the single active session so kid + admin share the same session
+let activeSessionId: string | null = null;
+
 // ─── WebSocket Message Handlers ────────────────────────────
 wsManager.on('session:start', async (client, _type, payload) => {
   try {
     const db = getDb();
+    let isNewSession = false;
 
-    const sessionId = uuid();
-    client.sessionId = sessionId;
+    // Reuse the existing active session if one exists
+    if (activeSessionId) {
+      client.sessionId = activeSessionId;
+    } else {
+      const sessionId = uuid();
+      client.sessionId = sessionId;
+      activeSessionId = sessionId;
+      isNewSession = true;
 
-    db.prepare(
-      'INSERT INTO sessions (id, template_id, status) VALUES (?, ?, ?)'
-    ).run(sessionId, payload.templateId || null, 'active');
+      db.prepare(
+        'INSERT INTO sessions (id, template_id, status) VALUES (?, ?, ?)'
+      ).run(sessionId, payload.templateId || null, 'active');
 
-    // Init agents
-    await storyAgent.init(sessionId);
-    await friendAgent.init(sessionId);
+      // Init agents once
+      await storyAgent.init(sessionId);
+      await friendAgent.init(sessionId);
+    }
 
     wsManager.send(client.id, 'session:started', {
-      sessionId,
+      sessionId: client.sessionId,
       status: 'active',
     });
 
-    console.log(`[Session] Started: ${sessionId} for client ${client.id}`);
+    console.log(`[Session] Client ${client.id} ${isNewSession ? 'started' : 'joined'} session ${client.sessionId}`);
 
-    // Send an instant welcome greeting (no AI dependency)
-    const welcomeText = 'היי! 🦄 אני קסם! איך קוראים לך?';
-    const greetingMsgId = uuid();
-    db.prepare(
-      `INSERT INTO messages (id, session_id, role, text, metadata)
-       VALUES (?, ?, ?, ?, ?)`
-    ).run(greetingMsgId, sessionId, 'friend', welcomeText, null);
-    wsManager.send(client.id, 'friend:response', {
-      message: {
-        id: greetingMsgId,
-        sessionId,
-        role: 'friend',
-        text: welcomeText,
-        createdAt: new Date().toISOString(),
-      },
-    });
-    wsManager.sendToSession(sessionId, 'transcript:update', {
-      message: {
-        id: greetingMsgId,
-        sessionId,
-        role: 'friend',
-        text: welcomeText,
-        createdAt: new Date().toISOString(),
-      },
-    });
+    // Only send welcome greeting + AI greeting on the first (new) session
+    if (isNewSession) {
+      const welcomeText = 'היי! 🦄 אני קסם! איך קוראים לך?';
+      const greetingMsgId = uuid();
+      db.prepare(
+        `INSERT INTO messages (id, session_id, role, text, metadata)
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(greetingMsgId, client.sessionId, 'friend', welcomeText, null);
 
-    // Then try to generate an AI greeting (non-blocking — if it fails, the hardcoded one is already shown)
-    friendAgent.generateResponse({
-      transcript: [],
-      currentSessionId: sessionId,
-      recentMessages: [{
-        id: '',
-        sessionId,
-        role: 'system',
-        text: 'הילדה התחברה להרפתקה חדשה!',
-        audioUrl: null,
-        metadata: null,
-        createdAt: new Date().toISOString(),
-      }],
-    }).then((aiGreeting) => {
-      if (aiGreeting && aiGreeting !== welcomeText) {
-        const aiMsgId = uuid();
-        db.prepare(
-          `INSERT INTO messages (id, session_id, role, text, metadata)
-           VALUES (?, ?, ?, ?, ?)`
-        ).run(aiMsgId, sessionId, 'friend', aiGreeting, null);
-        wsManager.send(client.id, 'friend:response', {
-          message: {
-            id: aiMsgId,
-            sessionId,
-            role: 'friend',
-            text: aiGreeting,
-            createdAt: new Date().toISOString(),
-          },
-        });
-        console.log(`[FriendAgent] AI Greeting: ${aiGreeting.substring(0, 100)}...`);
-      }
-    }).catch((err) => {
-      console.log('[FriendAgent] AI greeting skipped (using hardcoded):', err?.message);
-    });
+      // Broadcast to all session clients
+      const greetingPayload = {
+        message: {
+          id: greetingMsgId,
+          sessionId: client.sessionId,
+          role: 'friend',
+          text: welcomeText,
+          createdAt: new Date().toISOString(),
+        },
+      };
+      wsManager.sendToSession(client.sessionId, 'friend:response', greetingPayload);
+      wsManager.sendToSession(client.sessionId, 'transcript:update', greetingPayload);
+
+      // Non-blocking AI greeting
+      friendAgent.generateResponse({
+        transcript: [],
+        currentSessionId: client.sessionId,
+        recentMessages: [{
+          id: '',
+          sessionId: client.sessionId,
+          role: 'system',
+          text: 'הילדה התחברה להרפתקה חדשה!',
+          audioUrl: null,
+          metadata: null,
+          createdAt: new Date().toISOString(),
+        }],
+      }).then((aiGreeting) => {
+        if (aiGreeting && aiGreeting !== welcomeText) {
+          const aiMsgId = uuid();
+          db.prepare(
+            `INSERT INTO messages (id, session_id, role, text, metadata)
+             VALUES (?, ?, ?, ?, ?)`
+          ).run(aiMsgId, client.sessionId, 'friend', aiGreeting, null);
+          const aiPayload = {
+            message: {
+              id: aiMsgId,
+              sessionId: client.sessionId,
+              role: 'friend',
+              text: aiGreeting,
+              createdAt: new Date().toISOString(),
+            },
+          };
+          wsManager.sendToSession(client.sessionId!, 'friend:response', aiPayload);
+          console.log(`[FriendAgent] AI Greeting: ${aiGreeting.substring(0, 100)}...`);
+        }
+      }).catch((err) => {
+        console.log('[FriendAgent] AI greeting skipped (using hardcoded):', err?.message);
+      });
+    }
   } catch (err) {
     console.error(`[Session] Error starting session for ${client.id}:`, err);
     wsManager.send(client.id, 'session:error', { error: 'Failed to start session' });
@@ -263,8 +273,12 @@ wsManager.on('session:start', async (client, _type, payload) => {
 
 wsManager.on('session:stop', (client, _type, _payload) => {
   if (!client.sessionId) return;
-  const db = getDb();
 
+  if (client.sessionId === activeSessionId) {
+    activeSessionId = null;
+  }
+
+  const db = getDb();
   db.prepare(
     'UPDATE sessions SET status = ?, ended_at = datetime("now") WHERE id = ?'
   ).run('completed', client.sessionId);

@@ -35,19 +35,19 @@ if (!geminiKey) {
 
 const conductorProvider = new GeminiProvider({
   apiKey: geminiKey,
-  model: process.env.CONDUCTOR_MODEL || 'gemini-1.5-flash',
+  model: process.env.CONDUCTOR_MODEL || 'gemini-2.5-flash',
   temperature: 0.7,
 });
 
 const storyProvider = new GeminiProvider({
   apiKey: geminiKey,
-  model: process.env.STORY_MODEL || 'gemini-1.5-flash',
+  model: process.env.STORY_MODEL || 'gemini-2.5-flash',
   temperature: 0.9,
 });
 
 const friendProvider = new GeminiProvider({
   apiKey: geminiKey,
-  model: process.env.FRIEND_MODEL || 'gemini-1.5-flash',
+  model: process.env.FRIEND_MODEL || 'gemini-2.5-flash',
   temperature: 0.8,
 });
 
@@ -336,6 +336,17 @@ wsManager.on('admin:intervene', (client, _type, payload) => {
   conductor.addParentInstruction(content);
 
   console.log(`[Conductor] Parent intervention: "${content.substring(0, 50)}..."`);
+
+  // Immediately inject the intervention into the kid's Gemini Live session
+  wsManager.sendToSession(client.sessionId, 'whisper:inject', {
+    text: content,
+    source: 'parent',
+  });
+
+  // Also trigger the agent cycle so the conductor logs it properly
+  runAgentCycle(client.sessionId).catch((err) => {
+    console.error(`[AgentCycle] Error after intervention for session ${client.sessionId}:`, err);
+  });
 });
 
 // ─── Agent Cycle ────────────────────────────────────────────
@@ -390,6 +401,13 @@ async function runAgentCycle(sessionId: string): Promise<void> {
     // Pass whisper to friend agent
     friendAgent.setWhisper(whisper.content);
     console.log(`[Conductor] Whisper to friend: [${whisper.agentName}] ${whisper.content.substring(0, 80)}...`);
+  } else {
+    // Send heartbeat so admin knows conductor is alive
+    wsManager.sendToSession(sessionId, 'conductor:status', {
+      action: 'idle',
+      agentName: 'מנצח',
+      content: 'מקשיב...',
+    });
   }
 
   // 4. Friend agent generates a spoken response

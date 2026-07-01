@@ -120,6 +120,16 @@ export class GeminiLiveClient {
     });
   }
 
+  /** הזרקת טקסט לזרם ה-Live (לחישה מהמנצח, התערבות הורה) */
+  injectText(text: string): void {
+    if (!this.isSetupComplete) return;
+    this.send({
+      realtimeInput: {
+        text,
+      },
+    });
+  }
+
   private async handleMessage(data: unknown): Promise<void> {
     let text: string;
     if (typeof data === "string") {

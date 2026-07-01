@@ -45,7 +45,8 @@ export default function AdminView() {
         break;
       }
       case 'conductor:status': {
-        setConductorStatus(`${msg.payload.agentName}: ${(msg.payload.content as string).substring(0, 80)}...`);
+        const content = msg.payload.content as string;
+        setConductorStatus(`${msg.payload.agentName}: ${content.length > 80 ? content.substring(0, 80) + '...' : content}`);
         break;
       }
     }

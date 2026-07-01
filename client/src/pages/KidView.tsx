@@ -1,10 +1,12 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { GeminiLiveClient } from '../lib/gemini-live-client';
 import { AudioCapture } from '../lib/audio-capture';
 import { AudioPlayer } from '../lib/audio-player';
 import { buildSystemPrompt } from '../lib/system-prompt';
 import { getMicrophoneBlockReason } from '../lib/media-support';
+import { useWebSocket } from '../hooks/useWebSocket';
 import type { AgentStatus } from '../lib/types';
+import type { WebSocketMessage } from '../hooks/useWebSocket';
 import styles from './KidView.module.css';
 
 export default function KidView() {
@@ -15,9 +17,62 @@ export default function KidView() {
   const captureRef = useRef<AudioCapture | null>(null);
   const playerRef = useRef<AudioPlayer | null>(null);
   const activeRef = useRef(false);
+  const sessionStartedRef = useRef(false);
+
+  // ── Server WebSocket connection (so transcripts reach the conductor) ──
+  const { send: wsSend, connected: wsConnected } = useWebSocket({
+    type: 'kid',
+    onMessage: useCallback((msg) => {
+      switch (msg.type) {
+        case 'session:started': {
+          console.log('[Kid] Session started on server:', msg.payload.sessionId);
+          break;
+        }
+        case 'session:error': {
+          console.error('[Kid] Session error:', msg.payload.error);
+          break;
+        }
+        case 'friend:response': {
+          const text = (msg.payload.message as Record<string, unknown>)?.text as string;
+          console.log('[Kid] Server friend response:', text?.substring(0, 80));
+          break;
+        }
+        case 'whisper:inject': {
+          // Parent intervention: inject into Gemini Live stream
+          const text = msg.payload.text as string;
+          console.log('[Kid] Injecting whisper:', text?.substring(0, 80));
+          if (text && clientRef.current?.ready) {
+            clientRef.current.injectText(text);
+          }
+          break;
+        }
+      }
+    }, []),
+    onConnected: useCallback(() => {
+      console.log('[Kid] WS connected');
+    }, []),
+    onDisconnected: useCallback(() => {
+      console.log('[Kid] WS disconnected');
+    }, []),
+  });
+
+  // Track wsConnected in a ref so we can use it inside Gemini Live callbacks
+  const wsConnectedRef = useRef(false);
+  useEffect(() => {
+    wsConnectedRef.current = wsConnected;
+  }, [wsConnected]);
+
+  // Start server session as soon as WS connects (so kid has a sessionId for transcript forwarding)
+  useEffect(() => {
+    if (wsConnected && !sessionStartedRef.current) {
+      sessionStartedRef.current = true;
+      wsSend('session:start', {});
+    }
+  }, [wsConnected, wsSend]);
 
   const teardown = useCallback(() => {
     activeRef.current = false;
+    sessionStartedRef.current = false;
     captureRef.current?.stop();
     captureRef.current = null;
     playerRef.current?.destroy();
@@ -63,17 +118,44 @@ export default function KidView() {
       const capture = new AudioCapture();
       captureRef.current = capture;
 
+      // Accumulate transcript text per turn (for forwarding to server on turn completion)
+      let turnUserText = '';
+      let turnAgentText = '';
+
       client.connect({
         token,
         model,
         systemPrompt: buildSystemPrompt(),
         handlers: {
           onStatus: (s) => { if (activeRef.current) setStatus(s); },
-          onTranscript: () => {
-            // Transcript hidden from kid view
+          onTranscript: (role, textChunk) => {
+            // Accumulate transcript chunks until turn completes
+            if (role === 'user') {
+              turnUserText += textChunk + ' ';
+            } else {
+              turnAgentText += textChunk + ' ';
+            }
           },
           onTurnComplete: () => {
-            // no-op
+            // Forward accumulated transcripts to the server agent cycle
+            const userText = turnUserText.trim();
+            const agentText = turnAgentText.trim();
+
+            if (userText && wsConnectedRef.current) {
+              wsSend('transcript:update', {
+                role: 'kid',
+                text: userText,
+              });
+            }
+            if (agentText && wsConnectedRef.current) {
+              wsSend('transcript:update', {
+                role: 'friend',
+                text: agentText,
+              });
+            }
+
+            turnUserText = '';
+            turnAgentText = '';
           },
           onAudioChunk: (pcm) => {
             player.enqueue(pcm);
@@ -93,7 +175,7 @@ export default function KidView() {
         },
       });
 
-      // 5. Start capture
+      // 5. Start capture (sends mic audio to Gemini Live)
       await capture.start({
         onChunk: (b64) => client.sendAudioChunk(b64),
       });
@@ -105,11 +187,15 @@ export default function KidView() {
       setStatus('error');
       teardown();
     }
-  }, [teardown]);
+  }, [teardown, wsSend]);
 
   const handleStop = useCallback(() => {
+    if (sessionStartedRef.current) {
+      sessionStartedRef.current = false;
+      wsSend('session:stop', {});
+    }
     teardown();
-  }, [teardown]);
+  }, [teardown, wsSend]);
 
   const isSpeaking = status === 'speaking';
   const isActive = status === 'connecting' || status === 'listening' || status === 'thinking' || status === 'speaking';

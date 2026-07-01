@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
-interface WebSocketMessage {
+export interface WebSocketMessage {
   type: string;
   payload: Record<string, unknown>;
   timestamp: string;

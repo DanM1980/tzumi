@@ -2,7 +2,7 @@ import { AIProvider, AIProviderConfig } from './types.js';
 
 export class GeminiProvider implements AIProvider {
   private config: AIProviderConfig;
-  private baseUrl = 'https://generativelanguage.googleapis.com/v1';
+  private baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
 
   constructor(config: AIProviderConfig) {
     this.config = config;
@@ -20,7 +20,7 @@ export class GeminiProvider implements AIProvider {
     };
 
     if (systemPrompt) {
-      body.system_instruction = { parts: [{ text: systemPrompt }] };
+      body.systemInstruction = { parts: [{ text: systemPrompt }] };
     }
 
     const res = await fetch(url, {
